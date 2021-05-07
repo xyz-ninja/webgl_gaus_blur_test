@@ -10,7 +10,6 @@ document.body.appendChild(canvas)
 
 
 var gl = canvas.getContext('webgl')
-//  clear canvas with any color you want
 gl.clearColor(1.0, 1.0, 1.0, 1.0)
 gl.clear(gl.COLOR_BUFFER_BIT)
 
@@ -47,7 +46,6 @@ function createBuffer(data) {
 }
 
 
-// function that returns a `program` from compiled vertex & fragment shaders
 function createProgram(gl, vertexShader, fragmentShader) {
 	var program = gl.createProgram();
 	gl.attachShader(program, vertexShader);
@@ -55,8 +53,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 	gl.linkProgram(program);
 	var success = gl.getProgramParameter(program, gl.LINK_STATUS);
 	if (!success) {
-		// something went wrong with the link
-		throw ("program filed to link:" + gl.getProgramInfoLog(program));
+		throw ("ОШИБКА createProgram() :" + gl.getProgramInfoLog(program));
 	}
 	return program;
 };
@@ -64,30 +61,16 @@ function createProgram(gl, vertexShader, fragmentShader) {
 var texture_width = 1,
 	texture_height = 1;
 
-// Creates a texture from an existing canvas or HTMLImage (new Image())
-// without needing width & height or with a typed array (Uint8Array) that has
-// a specified width & height
-// e.g.
-// createTexture(HTMLImageElement) will work just fine
-// createTexture(Uint8Array,width,height), remember that a texture needs four values for one pixel
 function createTexture(image, width, height) {
 
 	var texture = gl.createTexture();
 
-	// Set the active texture slot to 0
-	// WebGL has ~30 texture slots, meaning you could have about 30 textures bound at once
-	// Think of it as an array of 30 pointers to texture objects that you can set
-	gl.activeTexture(gl.TEXTURE0); // Sets the current 'index'
-	gl.bindTexture(gl.TEXTURE_2D, texture); // binds the selected texture object to the current pointer
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, texture);
 
-	// How to filter the texture when it needs resizing when sampled
-	// (Is it going to be blurred when streched?)
-	// (gl.NEAREST means no blur)
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-	// What to do if UV coordinates go outside the texture's size
-	// gl.CLAMP_TO_EDGE repeats the pixel at the texture's border.
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
@@ -100,9 +83,6 @@ function createTexture(image, width, height) {
 
 
 function render(image) {
-	//alert('rendering...')
-	//vertex shader source
-
 	const vertexShaderSource = [
 		'attribute vec2 aPosition;',
 		'attribute vec2 aUV;',
@@ -113,8 +93,6 @@ function render(image) {
 		'}',
 	].join("\n");
 
-
-	//fragment shader source
 	const fragShaderSource = `
 
 	  precision mediump float;
@@ -127,7 +105,6 @@ function render(image) {
 		 gl_FragColor.rgb *= brightness;
 
 	  }`
-
 
 	const blurShader = `
 		precision mediump float;
@@ -166,6 +143,7 @@ function render(image) {
 	//     'gl_FragColor = vec4(1.0 - c.r, 1.0 - c.g, 1.0 - c.b, c.a);',
 	//     '}'
 	// ].join('\n');
+	
 	//create vertex shader
 	var vertexShader = createShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
 
@@ -175,7 +153,6 @@ function render(image) {
 	//create program
 	var program = createProgram(gl, vertexShader, fragShader);
 
-	// get location of attributes & uniforms
 	aPosition = gl.getAttribLocation(program, "aPosition");
 	aUV = gl.getAttribLocation(program, "aUV");
 	uTexture = gl.getUniformLocation(program, "uTexture");
@@ -195,7 +172,6 @@ function render(image) {
 
 	texture = createTexture(image);
 
-	// Setup GL State
 	gl.useProgram(program);
 	gl.uniform1i(uTexture, 0);
 	var blur = blurStrength;
@@ -206,15 +182,10 @@ function render(image) {
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-	// These functions tell WebGL how to interpret the vertexbuffer data
-
-	// Every sixteen bytes, use the first eight (4 bytes is a float) for the 'aPosition' attribute
 	gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, gl.FALSE, 16, 0);
 
-	// Every sixteen bytes, use the last eight bytes for the 'aUV' attribute
 	gl.vertexAttribPointer(aUV, 2, gl.FLOAT, gl.FALSE, 16, 8);
 
-	// These need to be enabled or the vertex data isn't fed indo the vertex shader
 	gl.enableVertexAttribArray(aPosition);
 	gl.enableVertexAttribArray(aUV);
 
